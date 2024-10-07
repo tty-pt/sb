@@ -1,55 +1,61 @@
 #!/bin/sh
 
-# ITEM_PATH=$ITEM_PATH/data.txt
-
-test -z "$HTTP_PARAM_b" || flags="-b"
+flags=""
+test -z "$HTTP_PARAM_b" || flags="$flags -b"
 test -z "$HTTP_PARAM_l" || flags="$flags -l"
-if test -z "$HTTP_PARAM_c"; then
+if test ! -z "$HTTP_PARAM_s"; then
 	nc=1
 	flags="$flags -C"
-else
-	nc=
-fi
-if test -z "$HTTP_PARAM_s"; then
-	ns=1
-else
-	ns=
-	flags="$flags -L"
 fi
 
 index() {
 	local counter=0
 	while IFS=: read song t; do
-		path="$ROOT/items/chords/items/$song/data.txt"
+		path="$DOCUMENT_ROOT/items/chords/items/$song/data.txt"
 		echo "<div><a href='#$counter'>`cat "$path" | head -n 1`</a></div>"
 		counter="`math $counter + 1`"
 	done
+}
+
+TypeBtn() {
+	if test ! -z "$HTTP_PARAM_s"; then
+		RB "🎸" "?"
+	else
+		RB "👄" "?s=1"
+		test -z "$HTTP_PARAM_l" \
+			&& RB "🏛️" "?l=1" \
+			|| RB "🔠" "?"
+		ScriptBtn
+	fi
 }
 
 cat >> $DOCUMENT_ROOT/tmp/fun <<!
 <label id="index" class="$RBS menu">
 	≡
 	<input type="checkbox" />
-	<div class="abs v l p c0 ts btn ttc">
-		`cat $ITEM_PATH/data.txt | index`
-	</div>
+	<div class="abs v ar8 p c0 ts btn ttc">`cat $ITEM_PATH/data.txt | index`</div>
 </label>
-`RB "🎸" "?s=$HTTP_PARAM_s&c=$nc"`
-`RB "👄" "?s=$ns&c=$HTTP_PARAM_c"`
 `EditBtn`
+`TypeBtn`
 !
+
+TForm() {
+	cat <<!
+<form action='.#$1' method='POST' class='h f fic'>
+<input name='t' type='number' step='1' value='$2'></input>
+<input name='n' type='hidden' value='$1'></input>
+<input name='l' type='hidden' value='$HTTP_PARAM_l'></input>
+<input name='s' type='hidden' value='$HTTP_PARAM_s'></input>
+<button>✔</button>
+</form>
+!
+}
 
 if im $OWNER && test -z "$nc"; then
 	shift_chords() {
-		local plus="`math $2 + 1`"
-		local minus="`math $2 - 1`"
-		cat - <<!
-<span class="f h">
-	`RB - "?c=1&n=$1&t=$minus#$1"`
-	`RB + "?c=1&n=$1&t=$plus#$1"`
-</span>
-!
-}
+		# add ⟳
+		echo "<span class='f h fic'>`TForm $1 $2`</span>"
+	}
 else
 	shift_chords() {
 	}
@@ -58,12 +64,25 @@ fi
 show() {
 	counter=0
 	while IFS=: read song t; do
-		path="$ROOT/items/chords/items/$song/data.txt"
+		song_dir="$DOCUMENT_ROOT/items/chords/items/$song"
+		path="$song_dir/data.txt"
+		lypath="$song_dir/data.ly"
+		test -f "$lypath" &&
+			lyink="<a href='/chords/$song/data.ly'>𝄞</a> " ||
+			lyink=
+
+		test -f "$song_dir/type" \
+			&& type="<h6>`cat $song_dir/type | head -n 1`</h6>" \
+			|| type=""
+
 		cat - <<!
-<div class='h f fic jcsb'>
-	<span id="$counter"><h2 class='tac'>`cat "$path" | head -n 1`</h2></span>
-	`shift_chords $counter $t`
+<span id='$counter' class='h f fic fcsb mt32'>
+<div class="v0 f">
+<h2 class='tac'>$lyink`cat "$path" | head -n 1`</h2>
+$type
 </div>
+`shift_chords $counter $t`
+</span>
 !
 		cat "$path" | tail -n +3 | transp -h $flags -t $t
 		counter="`math $counter + 1`"
@@ -75,13 +94,12 @@ if test ! -z "$HTTP_PARAM_n"; then
 	cn=0
 	cp $ITEM_PATH/data.txt $ITEM_PATH/backup.txt
 	cat $ITEM_PATH/data.txt | while IFS=: read song ct; do
-		if test $cn -eq $HTTP_PARAM_n; then
-			echo $song:$HTTP_PARAM_t
-		else
-			echo $song:$ct
-		fi
+		test $cn -eq $HTTP_PARAM_n \
+			&& echo $song:$HTTP_PARAM_t || echo $song:$ct
 		cn=`math $cn + 1`
 	done > $ITEM_PATH/data.txt
+
+	SeeOther "/sb/$iid/?s=$HTTP_PARAM_s&l=$HTTP_PARAM_l"
 fi
 
 echo "<pre lang='pt' class='v0 chords'>"

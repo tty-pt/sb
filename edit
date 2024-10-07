@@ -4,24 +4,24 @@ im $OWNER || Forbidden
 
 if test $REQUEST_METHOD = POST; then
 	c=0
-	while test $c -lt $count; do
-		eval "csong=\${song_$c}"
-		eval "ct=\${t_$c}"
+	while test $c -lt $HTTP_PARAM_count; do
+		eval "csong=\${HTTP_PARAM_song_$c}"
+		eval "ct=\${HTTP_PARAM_t_$c}"
 		csong="`urldecode "$csong"`"
 		echo $csong:$ct
 		c=`math $c + 1`
 	done > $ITEM_PATH/data.txt
 
-	# _see_other ./
+	SeeOther .
 fi
 
 proc() {
 	counter=0
 	while IFS=: read song t; do
-		path="$ROOT/items/chords/items/$song"
+		path="$DOCUMENT_ROOT/items/chords/items/$song"
 		echo "<div class='f h'>"
 		echo "<select name='song_$counter'>"
-		ls $ROOT/items/chords/items/ | while read line; do
+		ls $DOCUMENT_ROOT/items/chords/items/ | while read line; do
 			attr="`test "$song" != "$line" || echo selected`"
 			echo "<option $attr value='$line'>$line</option>"
 		done

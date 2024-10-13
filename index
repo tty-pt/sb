@@ -8,10 +8,43 @@ if test ! -z "$HTTP_PARAM_s"; then
 	flags="$flags -C"
 fi
 
+chords_path="$DOCUMENT_ROOT/items/chords/items/"
+
+rand() {
+	test -z "$1" \
+		&& qhash -R1 $chords_path/index.db \
+		|| qhash -m1 -rR$1 $chords_path/assoc.db
+}
+
+if test $REQUEST_METHOD = POST && im $OWNER; then
+	count="`wc -l $ITEM_PATH/data.txt`"
+	cn=0
+	cp $ITEM_PATH/data.txt $ITEM_PATH/backup.txt
+	cat $ITEM_PATH/data.txt | if test "$HTTP_PARAM_action" = "transpose"; then
+		while IFS=: read song ct format; do
+			test $cn -eq $HTTP_PARAM_n \
+				&& echo $song:$HTTP_PARAM_t:$format || echo $song:$ct:$format
+			cn=`math $cn + 1`
+		done
+	else
+		while IFS=: read song ct format; do
+			if test $cn -eq $HTTP_PARAM_n; then
+				nsong="`rand $format | awk '{print $2}'`"
+				echo $nsong:$ct:$format
+			else
+				echo $song:$ct:$format
+			fi
+			cn=`math $cn + 1`
+		done
+	fi > $ITEM_PATH/data.txt
+
+	SeeOther "/sb/$iid/?s=$HTTP_PARAM_s&l=$HTTP_PARAM_l"
+fi
+
 index() {
 	local counter=0
-	while IFS=: read song t; do
-		path="$DOCUMENT_ROOT/items/chords/items/$song/data.txt"
+	while IFS=: read song t format; do
+		path="$chords_path/$song/data.txt"
 		echo "<div><a href='#$counter'>`cat "$path" | head -n 1`</a></div>"
 		counter="`math $counter + 1`"
 	done
@@ -34,7 +67,6 @@ cat >> $DOCUMENT_ROOT/tmp/fun <<!
 	<input type="checkbox" />
 	<div class="abs v ar8 p c0 ts btn ttc">`cat $ITEM_PATH/data.txt | index`</div>
 </label>
-`EditBtn`
 `TypeBtn`
 !
 
@@ -45,7 +77,20 @@ TForm() {
 <input name='n' type='hidden' value='$1'></input>
 <input name='l' type='hidden' value='$HTTP_PARAM_l'></input>
 <input name='s' type='hidden' value='$HTTP_PARAM_s'></input>
+<input name='action' type='hidden' value='transpose'></input>
 <button>✔</button>
+</form>
+!
+}
+
+RForm() {
+	cat <<!
+<form action='.#$1' method='POST' class='h f fic'>
+<input name='n' type='hidden' value='$1'></input>
+<input name='l' type='hidden' value='$HTTP_PARAM_l'></input>
+<input name='s' type='hidden' value='$HTTP_PARAM_s'></input>
+<input name='action' type='hidden' value='randomize'></input>
+<button>⟳</button>
 </form>
 !
 }
@@ -53,7 +98,8 @@ TForm() {
 if im $OWNER && test -z "$nc"; then
 	shift_chords() {
 		# add ⟳
-		echo "<span class='f h fic'>`TForm $1 $2`</span>"
+		echo "<span>`TForm $1 $2`</span>"
+		echo "<span>`RForm $1`</span>"
 	}
 else
 	shift_chords() {
@@ -62,8 +108,8 @@ fi
 
 show() {
 	counter=0
-	while IFS=: read song t; do
-		song_dir="$DOCUMENT_ROOT/items/chords/items/$song"
+	while IFS=: read song t format; do
+		song_dir="$chords_path/$song"
 		path="$song_dir/data.txt"
 		lypath="$song_dir/data.ly"
 		test -f "$lypath" &&
@@ -71,13 +117,13 @@ show() {
 			lyink=
 
 		test -f "$song_dir/type" \
-			&& type="<h6>`cat $song_dir/type | head -n 1`</h6>" \
+			&& type="<h6>`qhash -g$format $song_dir/../types.db`</h6>" \
 			|| type=""
 
 		cat - <<!
-<span id='$counter' class='h f fic fcsb mt32'>
-<div class="v0 f">
-<h2 class='tac'>$lyink`cat "$path" | head -n 1`</h2>
+<span id='$counter' class='h f fic mt32'>
+<div class="v0 f fg">
+<h2>$lyink`cat "$path" | head -n 1`</h2>
 $type
 </div>
 `shift_chords $counter $t`
@@ -87,19 +133,6 @@ $type
 		counter="`math $counter + 1`"
 	done
 }
-
-if test ! -z "$HTTP_PARAM_n"; then
-	count="`wc -l $ITEM_PATH/data.txt`"
-	cn=0
-	cp $ITEM_PATH/data.txt $ITEM_PATH/backup.txt
-	cat $ITEM_PATH/data.txt | while IFS=: read song ct; do
-		test $cn -eq $HTTP_PARAM_n \
-			&& echo $song:$HTTP_PARAM_t || echo $song:$ct
-		cn=`math $cn + 1`
-	done > $ITEM_PATH/data.txt
-
-	SeeOther "/sb/$iid/?s=$HTTP_PARAM_s&l=$HTTP_PARAM_l"
-fi
 
 echo "<pre lang='pt' class='v0 chords'>"
 cat $ITEM_PATH/data.txt | show

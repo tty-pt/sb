@@ -2,7 +2,10 @@
 
 chords_path=$DOCUMENT_ROOT/items/chords/items
 
-ids="`qhash -r -g "Entrada" -g "Aleluia" -g "Ofertório" -g "Santo" -g "Comunhão" -g "Ação de Graças" -g "Saída" $chords_path/types.db`"
-ids="`echo $ids | sed 's/ / -R/g'`"
-rands="`qhash -m1 -R$ids $chords_path/assoc.db`"
-echo $rands | sed 's/ /:0 /g' | tr ' ' '\n' > $ITEM_PATH/data.txt
+qhash -m1 -ra $chords_path/types.db \
+	-R"Entrada" -R"Aleluia" -R"Ofertório" -R"Santo" \
+	-R"Comunhão" -R"Ação de Graças" -R"Saída" \
+	$chords_path/assoc.db | while read format id
+do
+	echo $id:0:$format
+done > $ITEM_PATH/data.txt

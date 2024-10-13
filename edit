@@ -17,33 +17,24 @@ fi
 
 chords_path="$DOCUMENT_ROOT/items/chords/items"
 
-listing() {
-	local format=$1
-
-	if test -z "$format"; then
-		qhash -l $chords_path/index.db
-	else
-		qhash -m1 -L$format $chords_path/assoc.db
-	fi
-}
-
 proc() {
 	counter=0
 	while IFS=: read song t format; do
 		path="$DOCUMENT_ROOT/items/chords/items/$song"
 		echo "<div class='f h'>"
 		echo "<select name='song_$counter'>"
+		echo FORMAT $format >&2
 		if test -z "$format"; then
 			qhash -l $chords_path/index.db
 		else
-			qhash -m1 -L$format $chords_path/assoc.db
-		fi | while read id ign; do
-			attr="`test "$song" != "$line" || echo selected`"
-			echo "<option $attr value='$id'>`qhash -g$id $chords_path/index.db`</option>"
+			qhash -m1 -q $chords_path/index.db -rg$format $chords_path/assoc.db
+		fi | while read id title; do
+			attr="`test "$song" != "$id" || echo selected`"
+			echo "<option $attr value='$id'>$title</option>"
 		done
 		echo "</select>"
 		echo "<input name='t_$counter' type='number' step='1' value='$t'></input>"
-		RB 👁 "/chords/`urlencode "$song"`?t=$t"
+		RB 👁 "/chords/$song?t=$t"
 		echo "</div>"
 		counter="`math $counter + 1`"
 	done

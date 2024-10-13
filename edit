@@ -15,15 +15,31 @@ if test $REQUEST_METHOD = POST; then
 	SeeOther .
 fi
 
+chords_path="$DOCUMENT_ROOT/items/chords/items"
+
+listing() {
+	local format=$1
+
+	if test -z "$format"; then
+		qhash -l $chords_path/index.db
+	else
+		qhash -m1 -L$format $chords_path/assoc.db
+	fi
+}
+
 proc() {
 	counter=0
-	while IFS=: read song t; do
+	while IFS=: read song t format; do
 		path="$DOCUMENT_ROOT/items/chords/items/$song"
 		echo "<div class='f h'>"
 		echo "<select name='song_$counter'>"
-		ls $DOCUMENT_ROOT/items/chords/items/ | while read line; do
+		if test -z "$format"; then
+			qhash -l $chords_path/index.db
+		else
+			qhash -m1 -L$format $chords_path/assoc.db
+		fi | while read id ign; do
 			attr="`test "$song" != "$line" || echo selected`"
-			echo "<option $attr value='$line'>$line</option>"
+			echo "<option $attr value='$id'>`qhash -g$id $chords_path/index.db`</option>"
 		done
 		echo "</select>"
 		echo "<input name='t_$counter' type='number' step='1' value='$t'></input>"

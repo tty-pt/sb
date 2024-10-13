@@ -25,7 +25,6 @@ TypeBtn() {
 		test -z "$HTTP_PARAM_l" \
 			&& RB "🏛️" "?l=1" \
 			|| RB "🔠" "?"
-		ScriptBtn
 	fi
 }
 

@@ -9,11 +9,16 @@ if test ! -z "$HTTP_PARAM_s"; then
 fi
 
 chords_path="$DOCUMENT_ROOT/items/chords/items/"
+choirs_path="$DOCUMENT_ROOT/items/choirs/items/"
 
 rand() {
+	test -f $ITEM_PATH/choir \
+		&& index_file="$choirs_path/`cat $ITEM_PATH/choir`/songs.db" \
+		|| index_file=$chords_path/index.db
+
 	test -z "$1" \
-		&& qhash -R1 $chords_path/index.db \
-		|| qhash -m1 -rR$1 $chords_path/assoc.db
+		&& qhash -R1 $index_file \
+		|| qhash -m1 -q $index_file -rR$1 $chords_path/assoc.db
 }
 
 if test $REQUEST_METHOD = POST && im $OWNER; then
@@ -117,7 +122,7 @@ show() {
 			lyink=
 
 		test -f "$song_dir/type" \
-			&& type="<h6>`qhash -g$format $song_dir/../types.db`</h6>" \
+			&& type="<h6>`qhash -g$format $song_dir/../types.db | cut -d' ' -f2-`</h6>" \
 			|| type=""
 
 		cat - <<!

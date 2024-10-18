@@ -4,11 +4,13 @@ im $OWNER || Forbidden
 
 if test $REQUEST_METHOD = POST; then
 	c=0
-	while test $c -lt $HTTP_PARAM_count; do
-		eval "csong=\${HTTP_PARAM_song_$c}"
-		eval "ct=\${HTTP_PARAM_t_$c}"
-		csong="`urldecode "$csong"`"
-		echo $csong:$ct
+	while test $c -lt $HTTP_PARAM_amount; do
+		eval "csong=\"\${HTTP_PARAM_song_$c}\""
+		eval "ct=\"\${HTTP_PARAM_t_$c}\""
+		eval "cfmt=\"\${HTTP_PARAM_fmt_$c}\""
+		csong="`test -z "$csong" || urldecode "$csong"`"
+		cfmt="`test -z "$cfmt" || urldecode "$cfmt"`"
+		echo $csong:$ct:$cfmt
 		c=`math $c + 1`
 	done > $ITEM_PATH/data.txt
 
@@ -16,32 +18,46 @@ if test $REQUEST_METHOD = POST; then
 fi
 
 chords_path="$DOCUMENT_ROOT/items/chords/items"
+choir_path="$DOCUMENT_ROOT/items/choir/items/`cat $ITEM_PATH/choir`"
 
 proc() {
 	counter=0
-	while IFS=: read song t format; do
-		path="$DOCUMENT_ROOT/items/chords/items/$song"
-		echo "<div class='f h'>"
-		echo "<select name='song_$counter'>"
-		echo FORMAT $format >&2
-		if test -z "$format"; then
-			qhash -l $chords_path/index.db
-		else
-			qhash -m1 -q $chords_path/index.db -rg$format $chords_path/assoc.db
-		fi | while read id title; do
-			attr="`test "$song" != "$id" || echo selected`"
-			echo "<option $attr value='$id'>$title</option>"
+	while IFS=: read song t fmt; do
+		formatstr="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter $ITEM_PATH/format.db | cut -d ' ' -f1-`"
+		path="$chords_path/$song"
+		echo "<div class='f h fic'><label class='v0 f'>"
+		echo "<select name='fmt_$counter'>"
+		qhash -l $choir_path/format.db | \
+			while read count format; do
+			attr="`test "$format" != "$formatstr" || echo selected`"
+			echo "<option $attr value='$format'>$format</option>"
 		done
 		echo "</select>"
+		echo "<select name='song_$counter'>"
+		qhash -q $chords_path/types.db -a $choir_path/songs.db -rg"$formatstr" $chords_path/assoc.db | \
+			while read id fid link flags title; do
+			test ! -z "$title" || continue
+			linktitle="`urlencode $link $flags $title`"
+			attr="`test "$song" != "$linktitle" || echo selected`"
+			echo "<option $attr value='$linktitle'>$title</option>"
+		done
+		echo "</select></label>"
+		test ! -z "$t" || t=0
 		echo "<input name='t_$counter' type='number' step='1' value='$t'></input>"
-		RB 👁 "/chords/$song?t=$t"
 		echo "</div>"
 		counter="`math $counter + 1`"
 	done
-	echo "<input type='hidden' name='count' value='$counter'></input>"
+	cat <<!
+<label class='h f fic'>
+<span>`_ Amount`</span>
+<input type='number' step='1' name='amount' value='$counter'></input>
+</label>
+!
 }
 
-echo "<form action='.' method='POST' class='v f fic'>"
-cat $ITEM_PATH/data.txt | proc
-echo "<button class='rs ps'>`_ Submit`</button>"
-echo "</form>"
+cat <<!
+<form action='.' method='POST' class='v f fic'>
+`cat $ITEM_PATH/data.txt | proc`
+<button class='rs ps'>`_ Submit`</button>
+</form>
+!

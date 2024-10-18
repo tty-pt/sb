@@ -1,11 +1,30 @@
 #!/bin/sh
-
 chords_path=$DOCUMENT_ROOT/items/chords/items
+choirs_path=$DOCUMENT_ROOT/items/choir/items
 
-qhash -m1 -ra $chords_path/types.db \
-	-R"Entrada" -R"Aleluia" -R"Ofertório" -R"Santo" \
-	-R"Comunhão" -R"Ação de Graças" -R"Saída" \
-	$chords_path/assoc.db | while read format id
-do
-	echo $id:0:$format
-done > $ITEM_PATH/data.txt
+if test "$REQUEST_METHOD" = "POST"; then
+	choir="`fd choir`"
+	choir_path="$choirs_path/$choir"
+	math "`cat $choir_path/counter`" + 1 > $choir_path/counter
+	echo $choir > $ITEM_PATH/choir
+
+	cat $choirs_path/$choir/format | while read line; do
+		test ! -z "$line" || continue
+		echo "-R\"$line\""
+	done | xargs -I {} qhash \
+		-q $chords_path/types.db -a $choir_path/songs.db -r {} \
+		$chords_path/assoc.db | while read id title; do
+			echo $title:0
+		done > /tmp/paste
+	
+	paste -d: /tmp/paste $choirs_path/$choir/format > $ITEM_PATH/data.txt
+else
+	path="$chords_path/$song"
+	echo "<label class='f h'>Choir: "
+	echo "<select name='choir'>"
+	qhash -l $choirs_path/index.db | while read id link title; do
+		echo "<option value='$id'>$title</option>"
+	done
+	echo "</select>"
+	echo "</label>"
+fi

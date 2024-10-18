@@ -16,21 +16,21 @@ if test $REQUEST_METHOD = POST; then
 fi
 
 chords_path="$DOCUMENT_ROOT/items/chords/items"
+choir_path="$DOCUMENT_ROOT/items/choir/items/`cat $ITEM_PATH/choir`"
 
 proc() {
 	counter=0
-	while IFS=: read song t format; do
-		path="$DOCUMENT_ROOT/items/chords/items/$song"
+	while IFS=: read song t fmt; do
+		formatstr="`qhash -a $chords_path/types.db -g$counter $choir_path/format.db | cut -d ' ' -f1-`"
+		formatid="`echo $formatstr | awk '{ print $2 }'`"
+		format="`echo $formatstr | cut -d ' ' -f3-`"
+		path="$chords_path/$song"
 		echo "<div class='f h'>"
 		echo "<select name='song_$counter'>"
-		echo FORMAT $format >&2
-		if test -z "$format"; then
-			qhash -l $chords_path/index.db
-		else
-			qhash -m1 -q $chords_path/index.db -rg$format $chords_path/assoc.db
-		fi | while read id title; do
-			attr="`test "$song" != "$id" || echo selected`"
-			echo "<option $attr value='$id'>$title</option>"
+		qhash -m1 -q $chords_path/links.db -rg"$formatid" $chords_path/assoc.db | \
+			while read typeid id title; do
+			attr="`test "$song" != "$title" || echo selected`"
+			echo "<option $attr value='$title'>$title</option>"
 		done
 		echo "</select>"
 		echo "<input name='t_$counter' type='number' step='1' value='$t'></input>"

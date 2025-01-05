@@ -4,14 +4,16 @@ im $OWNER || Forbidden
 
 if test $REQUEST_METHOD = POST; then
 	c=0
-	while test $c -lt $HTTP_PARAM_amount; do
+	cp $ITEM_PATH/data.txt /tmp/data.txt
+	test -z "$HTTP_PARAM_amount" && HTTP_PARAM_amount="`wc -l $ITEM_PATH/data.txt | awk '{print $1}'`"
+	while test "$c" -lt "$HTTP_PARAM_amount"; do
 		eval "csong=\"\${HTTP_PARAM_song_$c}\""
 		eval "ct=\"\${HTTP_PARAM_t_$c}\""
 		eval "cfmt=\"\${HTTP_PARAM_fmt_$c}\""
 		csong="`test -z "$csong" || urldecode "$csong"`"
 		cfmt="`test -z "$cfmt" || urldecode "$cfmt"`"
 		echo $csong:$ct:$cfmt
-		c=`math $c + 1`
+		c="`math $c + 1`"
 	done > $ITEM_PATH/data.txt
 
 	SeeOther .
@@ -23,21 +25,28 @@ choir_path="$DOCUMENT_ROOT/items/choir/items/`cat $ITEM_PATH/choir`"
 proc() {
 	counter=0
 	while IFS=: read song t fmt; do
+		test ! -z "$song" || continue
 		formatstr="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter $ITEM_PATH/format.db | cut -d ' ' -f1-`"
 		path="$chords_path/$song"
 		echo "<div class='f h fic'><label class='v0 f'>"
 		echo "<select name='fmt_$counter'>"
-		qhash -l $choir_path/format.db | \
+			echo "<option value='Any'>`_ Any`</option>"
+		qhash -l $chords_path/types.db | \
 			while read count format; do
 			attr="`test "$format" != "$formatstr" || echo selected`"
 			echo "<option $attr value='$format'>$format</option>"
 		done
 		echo "</select>"
 		echo "<select name='song_$counter'>"
-		qhash -q $chords_path/types.db -a $choir_path/songs.db -rg"$formatstr" $chords_path/assoc.db | \
-			while read id fid link flags title; do
+		if test "$fmt" = "Any"; then
+			qhash -q $chords_path/types.db -a $chords_path/index.db -l $chords_path/assoc.db
+		else
+			# FIXME still not good enough shouldn't print those not in songs.db
+			qhash -x -q $chords_path/types.db -a $chords_path/index.db -a $choir_path/songs.db -rg"$formatstr" $chords_path/assoc.db
+		fi | while read id fid link flags title; do
 			test ! -z "$title" || continue
-			linktitle="`urlencode $link $flags $title`"
+			# linktitle="$link $flags `urlencode $title`"
+			linktitle="$link $flags $title"
 			attr="`test "$song" != "$linktitle" || echo selected`"
 			echo "<option $attr value='$linktitle'>$title</option>"
 		done

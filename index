@@ -14,7 +14,7 @@ choir="`cat $ITEM_PATH/choir`"
 choir_path="$choirs_path/$choir"
 
 rand() {
-	qhash -q $chords_path/types.db -a $choir_path/songs.db -rR"$1" $chords_path/assoc.db
+	qhash -xq $chords_path/types.db -a $chords_path/index.db -a $choir_path/songs.db -rR"$1" $chords_path/assoc.db
 }
 
 if test $REQUEST_METHOD = POST && im $OWNER; then
@@ -45,7 +45,7 @@ index() {
 	while IFS=: read song t fmt; do
 		format="`qhash -g$counter $ITEM_PATH/format.db | cut -d' ' -f2-`"
 		path="$chords_path/`echo $song | awk '{print $1}'`/data.txt"
-		echo "<div><a href='#$counter'>`echo "$song" | cut -d' ' -f2-`</a></div>"
+		echo "<div><a href='#$counter'>`echo "$song" | cut -d' ' -f3-`</a></div>"
 		counter="`math $counter + 1`"
 	done
 }
@@ -111,7 +111,6 @@ fi
 show() {
 	counter=0
 	while IFS=: read song t fmt; do
-		echo $song >&2
 		test ! -z "$song" || continue
 		format="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter $ITEM_PATH/format.db | cut -d ' ' -f1-`"
 		link="`echo $song | awk '{print $1}'`"

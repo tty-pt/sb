@@ -22,7 +22,7 @@ else
 	path="$chords_path/$song"
 	echo "<label class='f h'>Choir: "
 	echo "<select name='choir'>"
-	qhash -l $choirs_path/index.db | while read id link title; do
+	qhash -l $choirs_path/index.db | while read id link flags title; do
 		echo "<option value='$id'>$title</option>"
 	done
 	echo "</select>"

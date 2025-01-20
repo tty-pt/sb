@@ -17,7 +17,8 @@ if test "$REQUEST_METHOD" = "POST"; then
 			echo $title:0
 		done > /tmp/paste
 	
-	paste -d: /tmp/paste $choirs_path/$choir/format > $ITEM_PATH/data.txt
+	paste -d: /tmp/paste $choirs_path/$choir/format \
+		| sed '$d' > $ITEM_PATH/data.txt
 else
 	path="$chords_path/$song"
 	echo "<label class='f h'>Choir: "

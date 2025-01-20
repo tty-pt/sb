@@ -5,7 +5,9 @@ im $OWNER || Forbidden
 if test $REQUEST_METHOD = POST; then
 	c=0
 	cp $ITEM_PATH/data.txt /tmp/data.txt
-	test -z "$HTTP_PARAM_amount" && HTTP_PARAM_amount="`wc -l $ITEM_PATH/data.txt | awk '{print $1}'`"
+	test ! -z "$HTTP_PARAM_amount" || \
+		HTTP_PARAM_amount="`wc -l $ITEM_PATH/data.txt | awk '{print $1}'`"
+
 	while test "$c" -lt "$HTTP_PARAM_amount"; do
 		eval "csong=\"\${HTTP_PARAM_song_$c}\""
 		eval "ct=\"\${HTTP_PARAM_t_$c}\""
@@ -25,9 +27,7 @@ choir_path="$DOCUMENT_ROOT/items/choir/items/`cat $ITEM_PATH/choir`"
 proc() {
 	counter=0
 	while IFS=: read song t fmt; do
-		test ! -z "$song" || continue
 		formatstr="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter $ITEM_PATH/format.db | cut -d ' ' -f1-`"
-		path="$chords_path/$song"
 		echo "<div class='f h fic'><label class='v0 f'>"
 		echo "<select name='fmt_$counter'>"
 			echo "<option value='Any'>`_ Any`</option>"

@@ -117,9 +117,9 @@ show() {
 		song_dir="$chords_path/$link"
 		path="$song_dir/data.txt"
 		lypath="$song_dir/data.ly"
-		test -f "$lypath" &&
-			lyink="<a href='/chords/$link/data.ly'>𝄞</a> " ||
-			lyink=
+		test -f "$lypath" \
+			&& lyink="<a href='/chords/$link/data.ly'>𝄞</a> " \
+			|| lyink=
 
 		test -f "$song_dir/type" \
 			&& type="<h6>$format</h6>" \

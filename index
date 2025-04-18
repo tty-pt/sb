@@ -1,8 +1,9 @@
 #!/bin/sh
 
 flags=""
-test -z "$HTTP_PARAM_b" || flags="$flags -b"
+
 test -z "$HTTP_PARAM_l" || flags="$flags -l"
+test -z "$HTTP_PARAM_b" || flags="$flags -b"
 if test ! -z "$HTTP_PARAM_s"; then
 	nc=1
 	flags="$flags -C"
@@ -10,7 +11,7 @@ fi
 
 chords_path="$DOCUMENT_ROOT/items/chords/items/"
 choirs_path="$DOCUMENT_ROOT/items/choir/items/"
-choir="`cat $ITEM_PATH/choir`"
+choir="`cat choir`"
 choir_path="$choirs_path/$choir"
 
 rand() {
@@ -18,10 +19,10 @@ rand() {
 }
 
 if test $REQUEST_METHOD = POST && im $OWNER; then
-	count="`wc -l $ITEM_PATH/data.txt`"
+	count="`wc -l data.txt`"
 	cn=0
-	cp $ITEM_PATH/data.txt $ITEM_PATH/backup.txt
-	cat $ITEM_PATH/data.txt | if test "$HTTP_PARAM_action" = "transpose"; then
+	cp data.txt backup.txt
+	cat data.txt | if test "$HTTP_PARAM_action" = "transpose"; then
 		while IFS=: read song ct fmt; do
 			test $cn -ne $HTTP_PARAM_n ||
 				ct=$HTTP_PARAM_t
@@ -35,7 +36,7 @@ if test $REQUEST_METHOD = POST && im $OWNER; then
 			echo "$song:$ct:$fmt"
 			cn=`math $cn + 1`
 		done
-	fi > $ITEM_PATH/data.txt
+	fi > data.txt
 
 	SeeOther "/sb/$iid/?s=$HTTP_PARAM_s&l=$HTTP_PARAM_l"
 fi
@@ -43,7 +44,7 @@ fi
 index() {
 	local counter=0
 	while IFS=: read song t fmt; do
-		format="`qhash -g$counter $ITEM_PATH/format.db | cut -d' ' -f2-`"
+		format="`qhash -g$counter format.db | cut -d' ' -f2-`"
 		path="$chords_path/`echo $song | awk '{print $1}'`/data.txt"
 		echo "<div><a href='#$counter'>`echo "$song" | cut -d' ' -f3-`</a></div>"
 		counter="`math $counter + 1`"
@@ -52,12 +53,17 @@ index() {
 
 TypeBtn() {
 	if test ! -z "$HTTP_PARAM_s"; then
-		RB "🎸" "?"
+		QB 🎸 s
 	else
-		RB "👄" "?s=1"
+		QB 🎤 s 1
+
 		test -z "$HTTP_PARAM_l" \
-			&& RB "🏛️" "?l=1" \
-			|| RB "🔠" "?"
+			&& QB 🏛️ l 1 \
+			|| QB 🔠 l
+
+		test -z "$HTTP_PARAM_b" && \
+			QB 🅱️ b 1 || \
+			QB "#️⃣" b
 	fi
 }
 
@@ -65,8 +71,9 @@ cat >> $DOCUMENT_ROOT/tmp/fun <<!
 <label id="index" class="$RBS menu extended">
 	≡
 	<input type="checkbox" />
-	<div class="abs v ar8 p c0 ts btn ttc">`cat $ITEM_PATH/data.txt | index`</div>
+	<div class="abs v ar8 p c0 ts btn ttc">`cat data.txt | index`</div>
 </label>
+`test -z "$HTTP_PARAM_v" && QB ▶️  v 1 || QB ⏸️ v`
 `TypeBtn`
 !
 
@@ -77,8 +84,7 @@ TForm() {
 <form action='.#$1' method='POST' class='h f fic'>
 <input name='t' type='number' step='1' value='$2'></input>
 <input name='n' type='hidden' value='$1'></input>
-<input name='l' type='hidden' value='$HTTP_PARAM_l'></input>
-<input name='s' type='hidden' value='$HTTP_PARAM_s'></input>
+`hidparams t`
 <input name='action' type='hidden' value='transpose'></input>
 <button class="$RBS">✔</button>
 </form></div></label>
@@ -108,11 +114,20 @@ else
 	}
 fi
 
+show_video() {
+	local yt="`zcat $1`"
+	test -z "$yt" || \
+		printf "\n<iframe src='https://www.youtube.com/embed/$yt' frameborder='0'></iframe>"
+}
+
+show_video=true
+test -z "$HTTP_PARAM_v" || show_video=show_video
+
 show() {
 	counter=0
 	while IFS=: read song t fmt; do
 		test ! -z "$song" || continue
-		format="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter $ITEM_PATH/format.db | cut -d ' ' -f1-`"
+		format="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter format.db | cut -d ' ' -f1-`"
 		link="`echo $song | awk '{print $1}'`"
 		song_dir="$chords_path/$link"
 		path="$song_dir/data.txt"
@@ -121,9 +136,7 @@ show() {
 			&& lyink="<a href='/chords/$link/data.ly'>𝄞</a> " \
 			|| lyink=
 
-		test -f "$song_dir/type" \
-			&& type="<h6>$format</h6>" \
-			|| type=""
+		type="<h6>$format</h6>"
 
 		cat - <<!
 <span id='$counter' class='h f fic mt32'>
@@ -136,11 +149,12 @@ $type
 </span>
 !
 		cat "$path" | tail -n +3 | transp -h $flags -t $t
+		$show_video $song_dir/yt
 		counter="`math $counter + 1`"
 	done
 }
 
 echo "<a href='/choir/$choir'><h3>`cat $choir_path/title`</h3></a>"
 echo "<pre lang='pt' class='v0 chords'>"
-cat $ITEM_PATH/data.txt | show
+cat data.txt | show
 echo "</pre>"

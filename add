@@ -6,7 +6,7 @@ if test "$REQUEST_METHOD" = "POST"; then
 	choir="`fd choir`"
 	choir_path="$choirs_path/$choir"
 	math "`cat $choir_path/counter`" + 1 > $choir_path/counter
-	echo $choir > $ITEM_PATH/choir
+	echo $choir > choir
 
 	cat $choirs_path/$choir/format | while read line; do
 		test ! -z "$line" || continue
@@ -18,7 +18,7 @@ if test "$REQUEST_METHOD" = "POST"; then
 		done > /tmp/paste
 	
 	paste -d: /tmp/paste $choirs_path/$choir/format \
-		| sed '$d' > $ITEM_PATH/data.txt
+		| sed '$d' > data.txt
 else
 	path="$chords_path/$song"
 	echo "<label class='f h'>Choir: "

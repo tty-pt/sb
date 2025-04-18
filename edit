@@ -4,9 +4,9 @@ im $OWNER || Forbidden
 
 if test $REQUEST_METHOD = POST; then
 	c=0
-	cp $ITEM_PATH/data.txt /tmp/data.txt
+	cp data.txt /tmp/data.txt
 	test ! -z "$HTTP_PARAM_amount" || \
-		HTTP_PARAM_amount="`wc -l $ITEM_PATH/data.txt | awk '{print $1}'`"
+		HTTP_PARAM_amount="`wc -l data.txt | awk '{print $1}'`"
 
 	while test "$c" -lt "$HTTP_PARAM_amount"; do
 		eval "csong=\"\${HTTP_PARAM_song_$c}\""
@@ -16,18 +16,18 @@ if test $REQUEST_METHOD = POST; then
 		cfmt="`test -z "$cfmt" || urldecode "$cfmt"`"
 		echo $csong:$ct:$cfmt
 		c="`math $c + 1`"
-	done > $ITEM_PATH/data.txt
+	done > data.txt
 
 	SeeOther .
 fi
 
 chords_path="$DOCUMENT_ROOT/items/chords/items"
-choir_path="$DOCUMENT_ROOT/items/choir/items/`cat $ITEM_PATH/choir`"
+choir_path="$DOCUMENT_ROOT/items/choir/items/`cat choir`"
 
 proc() {
 	counter=0
 	while IFS=: read song t fmt; do
-		formatstr="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter $ITEM_PATH/format.db | cut -d ' ' -f1-`"
+		formatstr="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter format.db | cut -d ' ' -f1-`"
 		echo "<div class='f h fic'><label class='v0 f'>"
 		echo "<select name='fmt_$counter'>"
 			echo "<option value='Any'>`_ Any`</option>"
@@ -40,9 +40,10 @@ proc() {
 		echo "<select name='song_$counter'>"
 		if test "$fmt" = "Any"; then
 			qhash -q $chords_path/types.db -a $chords_path/index.db -l $chords_path/assoc.db
-		else
-			# FIXME still not good enough shouldn't print those not in songs.db
+		elif test -f $choir_path/songs.db; then
 			qhash -x -q $chords_path/types.db -a $chords_path/index.db -a $choir_path/songs.db -rg"$formatstr" $chords_path/assoc.db
+		else
+			qhash -x -q $chords_path/types.db -a $chords_path/index.db -rg"$formatstr" $chords_path/assoc.db
 		fi | while read id fid link flags title; do
 			test ! -z "$title" || continue
 			# linktitle="$link $flags `urlencode $title`"
@@ -66,7 +67,7 @@ proc() {
 
 cat <<!
 <form action='.' method='POST' class='v f fic'>
-`cat $ITEM_PATH/data.txt | proc`
+`cat data.txt | proc`
 <button class='rs ps'>`_ Submit`</button>
 </form>
 !

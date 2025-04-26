@@ -13,12 +13,20 @@ chords_path="$DOCUMENT_ROOT/items/chords/items/"
 choirs_path="$DOCUMENT_ROOT/items/choir/items/"
 choir="`cat choir`"
 choir_path="$choirs_path/$choir"
+choir_title="`cat $choir_path/title`"
+choir="`echo $choir_title | translate`"
 
 rand() {
-	qhash -xq $chords_path/types.db -a $chords_path/index.db -a $choir_path/songs.db -rR"$1" $chords_path/assoc.db
+	if test -f $choir_path/songs.db; then
+		qhash -a $chords_path/index.db -a $choir_path/songs.db -R"$1" $chords_path/assoc.db
+	else
+		qhash -a $chords_path/index.db -R"$1" $chords_path/assoc.db
+	fi
 }
 
-if test $REQUEST_METHOD = POST && im $OWNER; then
+if test $REQUEST_METHOD = POST; then
+	im $OWNER $choir || Forbidden
+
 	count="`wc -l data.txt`"
 	cn=0
 	cp data.txt backup.txt
@@ -32,7 +40,7 @@ if test $REQUEST_METHOD = POST && im $OWNER; then
 	else
 		while IFS=: read song ct fmt; do
 			test $cn -ne $HTTP_PARAM_n ||
-				song="`rand "$fmt" | cut -d' ' -f2-`"
+				song="`rand "$fmt" | awk '{print $1}'`"
 			echo "$song:$ct:$fmt"
 			cn=`math $cn + 1`
 		done
@@ -43,10 +51,12 @@ fi
 
 index() {
 	local counter=0
-	while IFS=: read song t fmt; do
-		format="`qhash -g$counter format.db | cut -d' ' -f2-`"
-		path="$chords_path/`echo $song | awk '{print $1}'`/data.txt"
-		echo "<div><a href='#$counter'>`echo "$song" | cut -d' ' -f3-`</a></div>"
+	while IFS=: read link t fmt; do
+		echo -rg$link
+	done | xargs -I {} qhash {} $chords_path/index.db \
+		| while read link flags title; do
+		path="$chords_path/$link/data.txt"
+		echo "<div><a href='#$counter'>$title</a></div>"
 		counter="`math $counter + 1`"
 	done
 }
@@ -82,9 +92,9 @@ TForm() {
 <label id="tune" class="$RBS menu">🎚️
 <input type="checkbox" /><div class="abs v p ts ttc c01 r center">
 <form action='.#$1' method='POST' class='h f fic'>
-<input name='t' type='number' step='1' value='$2'></input>
 <input name='n' type='hidden' value='$1'></input>
 `hidparams t`
+<input name='t' type='number' step='1' value='$2'></input>
 <input name='action' type='hidden' value='transpose'></input>
 <button class="$RBS">✔</button>
 </form></div></label>
@@ -94,16 +104,15 @@ TForm() {
 RForm() {
 	cat <<!
 <form action='.#$1' method='POST' class='h f fic'>
+`hidparams t`
 <input name='n' type='hidden' value='$1'></input>
-<input name='l' type='hidden' value='$HTTP_PARAM_l'></input>
-<input name='s' type='hidden' value='$HTTP_PARAM_s'></input>
 <input name='action' type='hidden' value='randomize'></input>
 <button class="$RBS">🎲</button>
 </form>
 !
 }
 
-if im $OWNER && test -z "$nc"; then
+if im $OWNER $choir && test -z "$nc"; then
 	shift_chords() {
 		# add ⟳
 		echo "<span>`TForm $1 $2`</span>"
@@ -127,7 +136,6 @@ show() {
 	counter=0
 	while IFS=: read song t fmt; do
 		test ! -z "$song" || continue
-		format="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter format.db | cut -d ' ' -f1-`"
 		link="`echo $song | awk '{print $1}'`"
 		song_dir="$chords_path/$link"
 		path="$song_dir/data.txt"
@@ -136,13 +144,13 @@ show() {
 			&& lyink="<a href='/chords/$link/data.ly'>𝄞</a> " \
 			|| lyink=
 
-		type="<h6>$format</h6>"
+		type="<h6>$fmt</h6>"
 
 		cat - <<!
 <span id='$counter' class='h f fic mt32'>
 <div class="v0 f fg">
 
-<h4>$lyink<a href='/chords/$link/'>`echo $song | cut -d' ' -f3-`</a></h4>
+<h4>$lyink<a href='/chords/$link/'>`cat $chords_path/$link/title`</a></h4>
 $type
 </div>
 `shift_chords $counter $t`
@@ -154,7 +162,7 @@ $type
 	done
 }
 
-echo "<a href='/choir/$choir'><h3>`cat $choir_path/title`</h3></a>"
+echo "<a href='/choir/$choir'><h3>$choir_title</h3></a>"
 echo "<pre lang='pt' class='v0 chords'>"
 cat data.txt | show
 echo "</pre>"

@@ -1,12 +1,20 @@
 #!/bin/sh
 
-im $OWNER || Forbidden
+choirs_path="$DOCUMENT_ROOT/items/choir/items/"
+choir="`cat choir`"
+choir_path="$choirs_path/$choir"
+choir_title="`cat $choir_path/title`"
+choir="`echo $choir_title | translate`"
+
+im $OWNER $choir || Forbidden
 
 if test $REQUEST_METHOD = POST; then
 	c=0
 	cp data.txt /tmp/data.txt
 	test ! -z "$HTTP_PARAM_amount" || \
 		HTTP_PARAM_amount="`wc -l data.txt | awk '{print $1}'`"
+
+	test "$HTTP_PARAM_amount" -ge "1" || Fatal 400 "What happened? Don't submit such a short one."
 
 	while test "$c" -lt "$HTTP_PARAM_amount"; do
 		eval "csong=\"\${HTTP_PARAM_song_$c}\""
@@ -27,29 +35,28 @@ choir_path="$DOCUMENT_ROOT/items/choir/items/`cat choir`"
 proc() {
 	counter=0
 	while IFS=: read song t fmt; do
-		formatstr="`test ! -z "$fmt" && echo $fmt || qhash -rg$counter format.db | cut -d ' ' -f1-`"
 		echo "<div class='f h fic'><label class='v0 f'>"
 		echo "<select name='fmt_$counter'>"
 			echo "<option value='Any'>`_ Any`</option>"
 		qhash -l $chords_path/types.db | \
-			while read count format; do
-			attr="`test "$format" != "$formatstr" || echo selected`"
-			echo "<option $attr value='$format'>$format</option>"
+			while read link format; do
+			attr="`test "$link" != "$fmt" || echo selected`"
+			echo "<option $attr value='$link'>$format</option>"
 		done
 		echo "</select>"
 		echo "<select name='song_$counter'>"
-		if test "$fmt" = "Any"; then
-			qhash -q $chords_path/types.db -a $chords_path/index.db -l $chords_path/assoc.db
+		if test "$fmt" = "any"; then
+			qhash -l $chords_path/index.db
 		elif test -f $choir_path/songs.db; then
-			qhash -x -q $chords_path/types.db -a $chords_path/index.db -a $choir_path/songs.db -rg"$formatstr" $chords_path/assoc.db
+			qhash -x -a $chords_path/index.db -a $choir_path/songs.db \
+				-g"$fmt" $chords_path/assoc.db | awk '{$2=""; print $0}'
 		else
-			qhash -x -q $chords_path/types.db -a $chords_path/index.db -rg"$formatstr" $chords_path/assoc.db
-		fi | while read id fid link flags title; do
+			qhash -x -a $chords_path/index.db -g"$fmt" \
+				$chords_path/assoc.db | awk '{$2=""; print $0}'
+		fi | while read link flags title; do
 			test ! -z "$title" || continue
-			# linktitle="$link $flags `urlencode $title`"
-			linktitle="$link $flags $title"
-			attr="`test "$song" != "$linktitle" || echo selected`"
-			echo "<option $attr value='$linktitle'>$title</option>"
+			attr="`test "$song" != "$link" || echo selected`"
+			echo "<option $attr value='$link'>$title</option>"
 		done
 		echo "</select></label>"
 		test ! -z "$t" || t=0

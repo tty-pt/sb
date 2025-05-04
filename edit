@@ -38,7 +38,7 @@ proc() {
 		echo "<div class='f h fic'><label class='v0 f'>"
 		echo "<select name='fmt_$counter'>"
 			echo "<option value='Any'>`_ Any`</option>"
-		qhash -l $chords_path/types.db | \
+		qdb -l $chords_path/types.db | \
 			while read link format; do
 			attr="`test "$link" != "$fmt" || echo selected`"
 			echo "<option $attr value='$link'>$format</option>"
@@ -46,12 +46,12 @@ proc() {
 		echo "</select>"
 		echo "<select name='song_$counter'>"
 		if test "$fmt" = "any"; then
-			qhash -l $chords_path/index.db
+			qdb -l $chords_path/index.db
 		elif test -f $choir_path/songs.db; then
-			qhash -x -a $chords_path/index.db -a $choir_path/songs.db \
+			qdb -x -a $chords_path/index.db -a $choir_path/songs.db \
 				-g"$fmt" $chords_path/assoc.db | awk '{$2=""; print $0}'
 		else
-			qhash -x -a $chords_path/index.db -g"$fmt" \
+			qdb -x -a $chords_path/index.db -g"$fmt" \
 				$chords_path/assoc.db | awk '{$2=""; print $0}'
 		fi | while read link flags title; do
 			test ! -z "$title" || continue

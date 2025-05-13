@@ -37,7 +37,7 @@ proc() {
 	while IFS=: read song t fmt; do
 		echo "<div class='f h fic'><label class='v0 f'>"
 		echo "<select name='fmt_$counter'>"
-			echo "<option value='Any'>`_ Any`</option>"
+			echo "<option value='any'>`_ Any`</option>"
 		qdb -l $chords_path/types.db | \
 			while read link format; do
 			attr="`test "$link" != "$fmt" || echo selected`"
@@ -45,6 +45,7 @@ proc() {
 		done
 		echo "</select>"
 		echo "<select name='song_$counter'>"
+
 		if test "$fmt" = "any"; then
 			qdb -l $chords_path/index.db
 		elif test -f $choir_path/songs.db; then

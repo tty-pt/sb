@@ -18,9 +18,9 @@ choir="`echo $choir_title | translate`"
 
 rand() {
 	if test -f $choir_path/songs.db; then
-		qhash -a $chords_path/index.db -a $choir_path/songs.db -R"$1" $chords_path/assoc.db
+		qdb -a $chords_path/index.db -a $choir_path/songs.db -R"$1" $chords_path/assoc.db
 	else
-		qhash -a $chords_path/index.db -R"$1" $chords_path/assoc.db
+		qdb -a $chords_path/index.db -R"$1" $chords_path/assoc.db
 	fi
 }
 
@@ -53,7 +53,7 @@ index() {
 	local counter=0
 	while IFS=: read link t fmt; do
 		echo -rg$link
-	done | xargs -I {} qhash {} $chords_path/index.db \
+	done | xargs -I {} qdb {} $chords_path/index.db \
 		| while read link flags title; do
 		path="$chords_path/$link/data.txt"
 		echo "<div><a href='#$counter'>$title</a></div>"

@@ -13,19 +13,14 @@ if test "$REQUEST_METHOD" = "POST"; then
 	cat $choirs_path/$choir/format | while read line; do
 		test ! -z "$line" || continue
 		echo "-R\"$line\""
-	done | xargs -I {} qhash \
-		-q $chords_path/types.db -a $songs.db -r {} \
-		$chords_path/assoc.db | while read id title; do
-			echo $title:0
-		done > /tmp/paste
-	
-	paste -d: /tmp/paste $choirs_path/$choir/format \
-		| sed '$d' > data.txt
+	done | xargs -I {} qdb {} $chords_path/assoc.db | while read title type; do
+			echo $title:0:$type
+		done > data.txt
 else
 	path="$chords_path/$song"
 	echo "<label class='f h'>Choir: "
 	echo "<select name='choir'>"
-	qhash -l $choirs_path/index.db | while read link flags title; do
+	qdb -l $choirs_path/index.db | while read link flags title; do
 		echo "<option value='$link'>$title</option>"
 	done
 	echo "</select>"

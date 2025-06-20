@@ -94,7 +94,7 @@ TForm() {
 <form action='.#$1' method='POST' class='h f fic'>
 <input name='n' type='hidden' value='$1'></input>
 `hidparams t`
-<input name='t' type='number' step='1' value='$2'></input>
+<input name='t' type='number' step='1' min='0' value='$2'></input>
 <input name='action' type='hidden' value='transpose'></input>
 <button class="$RBS">✔</button>
 </form></div></label>
@@ -155,9 +155,9 @@ $type
 </div>
 `shift_chords $counter $t`
 </span>
+`$show_video $song_dir/yt`
 !
 		cat "$path" | tail -n +3 | transp -h $flags -t $t
-		$show_video $song_dir/yt
 		counter="`math $counter + 1`"
 	done
 }

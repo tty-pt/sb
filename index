@@ -87,6 +87,8 @@ cat >> $DOCUMENT_ROOT/tmp/fun <<!
 `TypeBtn`
 !
 
+. $chords_path/../lib
+
 TForm() {
 	cat <<!
 <label id="tune" class="$RBS menu">🎚️
@@ -94,7 +96,7 @@ TForm() {
 <form action='.#$1' method='POST' class='h f fic'>
 <input name='n' type='hidden' value='$1'></input>
 `hidparams t`
-<input name='t' type='number' step='1' min='0' value='$2'></input>
+`key_select $3/data.txt $2`
 <input name='action' type='hidden' value='transpose'></input>
 <button class="$RBS">✔</button>
 </form></div></label>
@@ -115,7 +117,7 @@ RForm() {
 if im $OWNER $choir && test -z "$nc"; then
 	shift_chords() {
 		# add ⟳
-		echo "<span>`TForm $1 $2`</span>"
+		echo "<span>`TForm $1 $2 $3`</span>"
 		echo "<span>`RForm $1`</span>"
 	}
 else
@@ -153,11 +155,11 @@ show() {
 <h4>$lyink<a href='/chords/$link/'>`cat $chords_path/$link/title`</a></h4>
 $type
 </div>
-`shift_chords $counter $t`
+`shift_chords $counter $t $song_dir`
 </span>
 `$show_video $song_dir/yt`
 !
-		cat "$path" | tail -n +3 | transp -h $flags -t $t
+		cat "$path" | transp -h $flags -t $t
 		counter="`math $counter + 1`"
 	done
 }

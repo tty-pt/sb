@@ -50,10 +50,10 @@ proc() {
 			qdb -l $chords_path/index.db
 		elif test -f $choir_path/songs.db; then
 			qdb -x -a $chords_path/index.db -a $choir_path/songs.db \
-				-g"$fmt" $chords_path/assoc.db | awk '{$2=""; print $0}'
+				-g"$fmt" $chords_path/assoc.db
 		else
 			qdb -x -a $chords_path/index.db -g"$fmt" \
-				$chords_path/assoc.db | awk '{$2=""; print $0}'
+				$chords_path/assoc.db
 		fi | while read link flags title; do
 			test ! -z "$title" || continue
 			attr="`test "$song" != "$link" || echo selected`"
@@ -61,7 +61,7 @@ proc() {
 		done
 		echo "</select></label>"
 		test ! -z "$t" || t=0
-		echo "<input name='t_$counter' type='number' step='1' value='$t'></input>"
+		echo "<input name='t_$counter' type='number' min='0' step='1' value='$t'></input>"
 		echo "</div>"
 		counter="`math $counter + 1`"
 	done

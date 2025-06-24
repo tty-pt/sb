@@ -21,7 +21,9 @@ else
 	echo "<label class='f h'>Choir: "
 	echo "<select name='choir'>"
 	qdb -l $choirs_path/index.db | while read link flags title; do
-		echo "<option value='$link'>$title</option>"
+		test "$link" = "$HTTP_PARAM_choir" && \
+			attr="selected" || attr=""
+		echo "<option $attr value='$link'>$title</option>"
 	done
 	echo "</select>"
 	echo "</label>"

@@ -2,13 +2,6 @@
 
 flags=""
 
-test -z "$HTTP_PARAM_l" || flags="$flags -l"
-test -z "$HTTP_PARAM_b" || flags="$flags -b"
-if test ! -z "$HTTP_PARAM_s"; then
-	nc=1
-	flags="$flags -C"
-fi
-
 chords_path="$DOCUMENT_ROOT/items/chords/items/"
 choirs_path="$DOCUMENT_ROOT/items/choir/items/"
 choir="`cat choir`"
@@ -46,7 +39,7 @@ if test $REQUEST_METHOD = POST; then
 		done
 	fi > data.txt
 
-	SeeOther "/sb/$iid/?s=$HTTP_PARAM_s&l=$HTTP_PARAM_l"
+	SeeOther "/sb/$iid/?c=$HTTP_PARAM_c&l=$HTTP_PARAM_l"
 fi
 
 index() {
@@ -61,28 +54,8 @@ index() {
 	done
 }
 
-TypeBtn() {
-	if test ! -z "$HTTP_PARAM_s"; then
-		QB 🎸 "chords" s
-	else
-		QB 🎤 "vocal" s 1
-
-		test -z "$HTTP_PARAM_l" \
-			&& QB 🏛️ "roman" l 1 \
-			|| QB 🔠 "caged" l
-
-		test -z "$HTTP_PARAM_b" && \
-			QB 🅱️ "bemol" b 1 || \
-			QB "#️⃣" "sustain" b
-	fi
-}
-
-cat >> $DOCUMENT_ROOT/tmp/fun <<!
-`test -z "$HTTP_PARAM_v" && QB ▶️  "videos" v 1 || QB ⏸️ "no videos"  v`
-`TypeBtn`
-!
-
 . $chords_path/../lib
+echo "$buttons" >> $DOCUMENT/tmp/fun
 
 TForm() {
 	cat <<!

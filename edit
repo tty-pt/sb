@@ -61,7 +61,7 @@ proc() {
 		done
 		echo "</select></label>"
 		test ! -z "$t" || t=0
-		echo "<input name='t_$counter' type='number' step='1' value='$t'></input>"
+		echo "<input name='t_$counter' type='number' min='0' step='1' value='$t'></input>"
 		echo "</div>"
 		counter="`math $counter + 1`"
 	done

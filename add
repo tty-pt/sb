@@ -13,14 +13,14 @@ if test "$REQUEST_METHOD" = "POST"; then
 	cat $choirs_path/$choir/format | while read line; do
 		test ! -z "$line" || continue
 		echo "-R\"$line\""
-	done | xargs -I {} qdb {} $chords_path/assoc.db | while read title type; do
+	done | xargs -I {} $qdb -k {} $chords_path/assoc.db:s | while read title type; do
 			echo $title:0:$type
 		done > data.txt
 else
 	path="$chords_path/$song"
 	echo "<label class='f h'>Choir: "
 	echo "<select name='choir'>"
-	qdb -l $choirs_path/index.db | while read link flags title; do
+	$qdb -l $choirs_path/index.db:s | while read link flags title; do
 		test "$link" = "$HTTP_PARAM_choir" && \
 			attr="selected" || attr=""
 		echo "<option $attr value='$link'>$title</option>"

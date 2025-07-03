@@ -11,9 +11,9 @@ choir="`echo $choir_title | translate`"
 
 rand() {
 	if test -f $choir_path/songs.db; then
-		qdb -a $chords_path/index.db -a $choir_path/songs.db -R"$1" $chords_path/assoc.db
+		$qdb -a $chords_path/index.db:s -a $choir_path/songs.db:s -R"$1" $chords_path/assoc.db:s
 	else
-		qdb -a $chords_path/index.db -R"$1" $chords_path/assoc.db
+		$qdb -a $chords_path/index.db:s -R"$1" $chords_path/assoc.db:s
 	fi
 }
 
@@ -46,7 +46,7 @@ index() {
 	local counter=0
 	while IFS=: read link t fmt; do
 		echo -g$link
-	done | xargs -I {} qdb -kr {} $chords_path/index.db \
+	done | xargs -I {} $qdb -kr {} $chords_path/index.db:s \
 		| while read link flags title; do
 		path="$chords_path/$link/data.txt"
 		echo "<div><a href='#$counter'>$title</a></div>"
@@ -86,9 +86,6 @@ if im $OWNER $choir && test -z "$nc"; then
 		echo "<span>`TForm $1 $2 $3`</span>"
 	}
 fi
-
-show_video=true
-test -z "$HTTP_PARAM_v" || show_video=show_video
 
 show() {
 	counter=0

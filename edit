@@ -32,13 +32,15 @@ fi
 chords_path="$DOCUMENT_ROOT/items/chords/items"
 choir_path="$DOCUMENT_ROOT/items/choir/items/`cat choir`"
 
+. $chords_path/../lib
+
 proc() {
 	counter=0
 	while IFS=: read song t fmt; do
 		echo "<div class='f h fic'><label class='v0 f'>"
 		echo "<select name='fmt_$counter'>"
 			echo "<option value='any'>`_ Any`</option>"
-		qdb -l $chords_path/types.db | \
+		$qdb -l $chords_path/types.db:s | \
 			while read link format; do
 			attr="`test "$link" != "$fmt" || echo selected`"
 			echo "<option $attr value='$link'>$format</option>"
@@ -47,13 +49,13 @@ proc() {
 		echo "<select name='song_$counter'>"
 
 		if test "$fmt" = "any"; then
-			qdb -l $chords_path/index.db
+			$qdb -l $chords_path/index.db:s
 		elif test -f $choir_path/songs.db; then
-			qdb -x -a $chords_path/index.db -a $choir_path/songs.db \
-				-g"$fmt" $chords_path/assoc.db
+			$qdb -x -a $chords_path/index.db:s -a $choir_path/songs.db:s \
+				-g"$fmt" $chords_path/assoc.db:s
 		else
-			qdb -x -a $chords_path/index.db -g"$fmt" \
-				$chords_path/assoc.db
+			$qdb -x -a $chords_path/index.db:s -g"$fmt" \
+				$chords_path/assoc.db:s
 		fi | while read link flags title; do
 			test ! -z "$title" || continue
 			attr="`test "$song" != "$link" || echo selected`"
@@ -61,7 +63,8 @@ proc() {
 		done
 		echo "</select></label>"
 		test ! -z "$t" || t=0
-		echo "<input name='t_$counter' type='number' min='0' step='1' value='$t'></input>"
+		flags=""
+		key_select $chords_path$song/data.txt "$t" "t_$counter" 1
 		echo "</div>"
 		counter="`math $counter + 1`"
 	done
@@ -76,6 +79,6 @@ proc() {
 cat <<!
 <form action='.' method='POST' class='v f fic'>
 `cat data.txt | proc`
-<button class='rs ps'>`_ Submit`</button>
+<button class='rs ps'>`__ submit`</button>
 </form>
 !

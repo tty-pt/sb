@@ -87,9 +87,6 @@ if im $OWNER $choir && test -z "$nc"; then
 	}
 fi
 
-show_video=true
-test -z "$HTTP_PARAM_v" || show_video=show_video
-
 show() {
 	counter=0
 	while IFS=: read song t fmt; do

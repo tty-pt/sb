@@ -55,7 +55,7 @@ proc() {
 				-g"$fmt" $chords_path/assoc.db:s
 		else
 			$qdb -x -a $chords_path/index.db:s -g"$fmt" \
-				$chords_path/assoc.db:s
+				$chords_path/assoc.db
 		fi | while read link flags title; do
 			test ! -z "$title" || continue
 			attr="`test "$song" != "$link" || echo selected`"

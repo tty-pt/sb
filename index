@@ -55,7 +55,7 @@ index() {
 }
 
 . $chords_path/../lib
-echo "$buttons" >> $DOCUMENT/tmp/fun
+echo "$buttons" >> $fun
 
 TForm() {
 	cat <<!
@@ -96,7 +96,6 @@ show() {
 	done
 }
 
-echo "<a href='/choir/$choir'><h3>$choir_title</h3></a>"
 echo "<pre lang='pt' class='v f chords'>"
 cat data.txt | show
 echo "</pre>"

@@ -1,7 +1,5 @@
 #!/bin/sh
 
-flags=""
-
 chords_path="$DOCUMENT_ROOT/items/chords/items/"
 choirs_path="$DOCUMENT_ROOT/items/choir/items/"
 choir="`cat choir`"

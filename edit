@@ -34,36 +34,53 @@ choir_path="$DOCUMENT_ROOT/items/choir/items/`cat choir`"
 
 . $chords_path/../lib
 
+tmp=$DOCUMENT_ROOT/tmp/$rid
+
+song_options() {
+	if test "$fmt" = "any"; then
+		$qdb -l $chords_path/index.db
+	else
+		cmd="$qdb -kr `$qdb -rg"$fmt" $chords_path/assoc.db | sed 's/\</-g/g'` $chords_path/index.db"
+		$cmd
+	fi | while read link flags title; do
+		test ! -z "$title" || continue
+		printf '<option value="%s">%s</option>\n' "$link" "$title"
+	done | tee $tmp$fmt
+}
+
+format_options() {
+	echo "<option value='any'>`_ Any`</option>"
+	$qdb -l $chords_path/types.db | \
+		while read link format; do
+			echo "<option value='$link'>$format</option>"
+		done
+}
+
 proc() {
 	counter=0
 	while IFS=: read song t fmt; do
 		echo "<div class='f h fic'><label class='v0 f'>"
-		echo "<select name='fmt_$counter'>"
-			echo "<option value='any'>`_ Any`</option>"
-		$qdb -l $chords_path/types.db:s | \
-			while read link format; do
-			attr="`test "$link" != "$fmt" || echo selected`"
-			echo "<option $attr value='$link'>$format</option>"
-		done
-		echo "</select>"
-		echo "<select name='song_$counter'>"
 
-		if test "$fmt" = "any"; then
-			$qdb -l $chords_path/index.db:s
-		elif test -f $choir_path/songs.db; then
-			$qdb -x -a $chords_path/index.db:s -a $choir_path/songs.db:s \
-				-g"$fmt" $chords_path/assoc.db:s
+		echo "<select name='fmt_$counter' data-value='$fmt'>"
+		if test -e $tmp"fmt"; then
+			cat $tmp"fmt"
 		else
-			$qdb -x -a $chords_path/index.db:s -g"$fmt" \
-				$chords_path/assoc.db
-		fi | while read link flags title; do
-			test ! -z "$title" || continue
-			attr="`test "$song" != "$link" || echo selected`"
-			echo "<option $attr value='$link'>$title</option>"
-		done
+			format_options | tee $tmp"fmt"
+		fi
+		echo "</select>"
+
+		echo "<select name='song_$counter' data-value='$song'>"
+
+		if test -e $tmp"$fmt"; then
+			cat $tmp"$fmt"
+		else
+			song_options
+		fi
+
 		echo "</select></label>"
 		test ! -z "$t" || t=0
 		flags=""
+		echo key_select $chords_path$song/data.txt "$t" "t_$counter" 1 >&2
 		key_select $chords_path$song/data.txt "$t" "t_$counter" 1
 		echo "</div>"
 		counter="`math $counter + 1`"
@@ -79,6 +96,24 @@ proc() {
 cat <<!
 <form action='.' method='POST' class='v f fic'>
 `cat data.txt | proc`
-<button class='rs ps'>`__ submit`</button>
+<button class='rs ps'>`_ Submit`</button>
 </form>
+<script>
+let val = parseInt(document.querySelector('input[name="amount"]').value, 10);
+
+function auto_select(select) {
+  const target = select.dataset.value;
+
+  for (let opt of select.options) {
+    if (opt.value === target) {
+      opt.selected = true;
+    } else {
+      opt.selected = false;
+    }
+  }
+}
+
+document.querySelectorAll('select[data-value]').forEach(auto_select);
+
+</script>
 !

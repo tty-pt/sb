@@ -8,19 +8,16 @@ if test "$REQUEST_METHOD" = "POST"; then
 	math "`cat $choir_path/counter`" + 1 > $choir_path/counter
 	echo $choir > choir
 
-	songs="`test -f $choir_path/songs && echo $choir_path/songs || echo $chords_path/index`"
+	choir_format="`test -f $choir_path/format && echo $choir_path/format || echo $choirs_path/../../sb/format`"
 
-	cat $choirs_path/$choir/format | while read line; do
-		test ! -z "$line" || continue
-		echo "-R\"$line\""
-	done | xargs -I {} $qdb -k {} $chords_path/assoc.db:s | while read title type; do
-			echo $title:0:$type
-		done > data.txt
+	cat $choir_format | while read line; do
+		echo :0:$line
+	done > data.txt
 else
 	path="$chords_path/$song"
 	echo "<label class='f h'>Choir: "
 	echo "<select name='choir'>"
-	$qdb -l $choirs_path/index.db:s | while read link flags title; do
+	qmap -l $choirs_path/index.db | while read link flags title; do
 		test "$link" = "$HTTP_PARAM_choir" && \
 			attr="selected" || attr=""
 		echo "<option $attr value='$link'>$title</option>"

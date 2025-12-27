@@ -9,9 +9,9 @@ choir="`echo $choir_title | translate`"
 
 rand() {
 	if test -f $choir_path/songs.db; then
-		$qdb -a $chords_path/index.db:s -a $choir_path/songs.db:s -R"$1" $chords_path/assoc.db:s
+		qmap -a $chords_path/index.db:s -a $choir_path/songs.db:s -R"$1" $chords_path/assoc.db:s
 	else
-		$qdb -a $chords_path/index.db:s -R"$1" $chords_path/assoc.db:s
+		qmap -a $chords_path/index.db:s -R"$1" $chords_path/assoc.db:s
 	fi
 }
 

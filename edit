@@ -34,13 +34,14 @@ choir_path="$DOCUMENT_ROOT/items/choir/items/`cat choir`"
 
 . $chords_path/../lib
 
-tmp=$DOCUMENT_ROOT/tmp/$rid
+tmp=$DOCUMENT_ROOT/tmp/sb/options/
+test -f $tmp || mkdir -p $tmp
 
 song_options() {
 	if test "$fmt" = "any"; then
-		$qdb -l $chords_path/index.db
+		qmap -l $chords_path/index.db
 	else
-		cmd="$qdb -kr `$qdb -rg"$fmt" $chords_path/assoc.db | sed 's/\</-g/g'` $chords_path/index.db"
+		cmd="qmap -kr `qmap -rg"$fmt" $chords_path/assoc.db | sed 's/\</-g/g'` $chords_path/index.db"
 		$cmd
 	fi | while read link flags title; do
 		test ! -z "$title" || continue
@@ -50,7 +51,7 @@ song_options() {
 
 format_options() {
 	echo "<option value='any'>`_ Any`</option>"
-	$qdb -l $chords_path/types.db | \
+	qmap -l $chords_path/types.db | \
 		while read link format; do
 			echo "<option value='$link'>$format</option>"
 		done
@@ -80,7 +81,6 @@ proc() {
 		echo "</select></label>"
 		test ! -z "$t" || t=0
 		flags=""
-		echo key_select $chords_path$song/data.txt "$t" "t_$counter" 1 >&2
 		key_select $chords_path$song/data.txt "$t" "t_$counter" 1
 		echo "</div>"
 		counter="`math $counter + 1`"
